@@ -1,0 +1,63 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: veritone
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notebooks-service
+  namespace: veritone
+spec:
+  selector:
+    app: demo
+  ports:
+  - name: notebooks
+    protocol: TCP
+    port: 8888
+    targetPort: 8888
+  - name: box
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  sessionAffinity: None
+  sessionAffinity: None
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+  namespace: veritone
+  labels:
+    app: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      containers:
+      - name: machinebox
+        image: machinebox/classificationbox
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MB_KEY
+          value: "<your_MB_KEY>"
+        ports:
+        - containerPort: 8080
+      - name: notebooks
+        image: naughtytao/jyputer:0.4
+        imagePullPolicy: IfNotPresent
+        command: ["jupyter", "notebook", "--port=8888", "--no-browser", "--ip=0.0.0.0", "--allow-root"]
+        ports:
+        - containerPort: 8888
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
